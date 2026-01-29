@@ -24,7 +24,7 @@ namespace Bags_Shop_API.Services.ProductServices.Command
         {
             var product = await _unitOfWork.Products.GetByIdAsync(request.Id);
 
-            if (product == null)
+            if (product == null||product.Delete_AT is not null)
                 return Result<ProductDto>.Fail($"No Product With Id {request.Id}", 404);
 
             bool isUpdated = false;
@@ -50,6 +50,11 @@ namespace Bags_Shop_API.Services.ProductServices.Command
             if (!string.IsNullOrEmpty(request.EnDescription))
             {
                 product.EnDescription = request.EnDescription;
+                isUpdated = true;
+            }
+            if(request.Price.HasValue)
+            {
+                product.Price = request.Price.Value;
                 isUpdated = true;
             }
 

@@ -33,47 +33,21 @@ namespace Bags_Shop_API.Services.ProductServices.Command
                 p.Images.Select(i => i.CloudinaryPublicId).ToList()
             ));
 
-            spec.Criteria = p => p.Id == request.Id;
 
-            var productInfos = await _unitOfWork.Products.GetAllAsync(spec);
-            var productInfo = productInfos.FirstOrDefault();
+            var productInfo = await _unitOfWork.Products.GetByIdAsync(request.Id);
+       
 
-            if (productInfo == null)
+            if (productInfo == null||productInfo.Delete_AT is not null)
             {
                 _logger.LogWarning("Product not found with ID: {ProductId}", request.Id);
                 return Result<bool>.Fail($"No Product With Id {request.Id}", 404);
             }
+            productInfo.Delete_AT = DateTime.UtcNow;
+            _unitOfWork.Products.Update(productInfo);
+            await _unitOfWork.SaveChangesAsync();
 
-            if (productInfo.HasOrderItems)
-            {
-                _logger.LogWarning("Cannot delete product {ProductId} as it is used in order items", request.Id);
-                return Result<bool>.Fail("can't delete this but u can deactive it", 409);
-            }
 
-            _logger.LogInformation("Deleting product {ProductId} and its {ImageCount} images", request.Id, productInfo.CloudinaryPublicIds.Count);
 
-            // Enqueue Cloudinary delections in background via Hangfire
-            foreach (var publicId in productInfo.CloudinaryPublicIds)
-            {
-                _cloudinaryImageService.EnqueueDeletion(publicId);
-            }
-
-            // Wrap deletions in a transaction for atomicity
-            await _unitOfWork.BeginTransactionAsync();
-            try
-            {
-                // Bulk delete images and product from DB
-                await _unitOfWork.Images.ExecuteDeleteAsync(i => i.ProductId == request.Id);
-                await _unitOfWork.Products.ExecuteDeleteAsync(p => p.Id == request.Id);
-
-                await _unitOfWork.CommitTransactionAsync();
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                _logger.LogError(ex, "Error deleting product {ProductId}", request.Id);
-                return Result<bool>.Fail("An error occurred during deletion", 500);
-            }
 
             _logger.LogInformation("Product with ID: {ProductId} deleted successfully from database", request.Id);
 

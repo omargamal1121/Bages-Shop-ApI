@@ -34,6 +34,7 @@ namespace Bags_Shop_API.Controllers.Admin
         public async Task<IActionResult> GetById(int id)
         {
             var query = new GetDiscountByIdQuery(id);
+            query.IsAdminRequest = true;
             var result = await _mediator.Send(query);
 
             if (!result.Success)

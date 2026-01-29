@@ -17,46 +17,13 @@ namespace Bags_Shop_API.Services.OrderServices.Queries.Handlers
 
         public async Task<Result<OrderDto>> Handle(GetOrderByIdQuery request, CancellationToken cancellationToken)
         {
-            var spec = new OrderWithItemsSpec(request.Id);
+            var spec = new OrderWithItemsProjectionSpec(request.Id);
             var order = await _unitOfWork.Orders.GetByIdAsync(spec);
 
             if (order == null)
                 return Result<OrderDto>.Fail("Order not found.", 404);
 
-            var dto = MapToDto(order);
-            return Result<OrderDto>.Ok(dto);
-        }
-
-        private OrderDto MapToDto(Order order)
-        {
-            return new OrderDto
-            {
-                Id = order.Id,
-                Address = order.Address,
-                Phone = order.Phone,
-                Status = order.Status.ToString(),
-                FinalPrice = order.FinalPrice,
-                CreatedAt = order.CreatedAt,
-                ExpiresAt = order.ExpiresAt,
-                OrderItems = order.OrderItems.Select(oi => new OrderItemSummaryDto
-                {
-                    ProductId = oi.ProductId,
-                    ProductName = oi.Product?.EnName ?? "Unknown Product", // Assuming EnName exists
-                    Quantity = oi.Quantity,
-                    UnitPrice = oi.UnitPrice,
-                    TotalPrice = oi.TotalPrice
-                }).ToList(),
-                Payments = order.Payments?.Select(p => new PaymentSummaryDto
-                {
-                    Id = p.Id,
-                    Amount = p.Amount,
-                    Currency = p.Currency,
-                    Method = p.Method.ToString(),
-                    Status = p.Status.ToString(),
-                    TransactionId = p.TransactionId,
-                    CreatedAt = p.CreatedAt
-                }).ToList() ?? new()
-            };
+            return Result<OrderDto>.Ok(order);
         }
     }
 
@@ -71,33 +38,68 @@ namespace Bags_Shop_API.Services.OrderServices.Queries.Handlers
 
         public async Task<Result<List<OrderDto>>> Handle(GetAllOrdersQuery request, CancellationToken cancellationToken)
         {
-            var spec = new OrderWithItemsSpec();
+            var spec = new OrderWithFiltersProjectionSpec(
+                request.CreatedFrom, 
+                request.CreatedTo, 
+                request.Status,
+                request.Page,
+                request.PageSize);
+            
             var orders = await _unitOfWork.Orders.GetAllAsync(spec);
 
-            var dtos = orders.Select(MapToDto).ToList();
-            return Result<List<OrderDto>>.Ok(dtos);
+            return Result<List<OrderDto>>.Ok(orders);
+        }
+    }
+
+    public class GetOrdersByUserKeyQueryHandler : IRequestHandler<GetOrdersByUserKeyQuery, Result<List<OrderDto>>>
+    {
+        private readonly IUnitOfWork _unitOfWork;
+
+        public GetOrdersByUserKeyQueryHandler(IUnitOfWork unitOfWork)
+        {
+            _unitOfWork = unitOfWork;
         }
 
-        private OrderDto MapToDto(Order order)
+        public async Task<Result<List<OrderDto>>> Handle(GetOrdersByUserKeyQuery request, CancellationToken cancellationToken)
         {
-            return new OrderDto
-            {
-                Id = order.Id,
-                Address = order.Address,
-                Phone = order.Phone,
-                Status = order.Status.ToString(),
-                FinalPrice = order.FinalPrice,
-                CreatedAt = order.CreatedAt,
-                ExpiresAt = order.ExpiresAt,
-                OrderItems = order.OrderItems.Select(oi => new OrderItemSummaryDto
-                {
-                    ProductId = oi.ProductId,
-                    ProductName = oi.Product?.EnName ?? "Unknown Product",
-                    Quantity = oi.Quantity,
-                    UnitPrice = oi.UnitPrice,
-                    TotalPrice = oi.TotalPrice
-                }).ToList()
-            };
+            if (string.IsNullOrEmpty(request.UserKey))
+                return Result<List<OrderDto>>.Fail("User key is required.", 400);
+
+            var spec = new OrdersByUserKeyProjectionSpec(
+                request.UserKey, 
+                request.CreatedFrom, 
+                request.CreatedTo, 
+                request.Status, 
+                request.Page, 
+                request.PageSize);
+            
+            var orders = await _unitOfWork.Orders.GetAllAsync(spec);
+
+            return Result<List<OrderDto>>.Ok(orders);
+        }
+    }
+
+    public class GetOrderByIdAndUserKeyQueryHandler : IRequestHandler<GetOrderByIdAndUserKeyQuery, Result<OrderDto>>
+    {
+        private readonly IUnitOfWork _unitOfWork;
+
+        public GetOrderByIdAndUserKeyQueryHandler(IUnitOfWork unitOfWork)
+        {
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task<Result<OrderDto>> Handle(GetOrderByIdAndUserKeyQuery request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(request.UserKey))
+                return Result<OrderDto>.Fail("User key is required.", 400);
+
+            var spec = new OrderByIdAndUserKeyProjectionSpec(request.Id, request.UserKey);
+            var order = await _unitOfWork.Orders.GetByIdAsync(spec);
+
+            if (order == null)
+                return Result<OrderDto>.Fail("Order not found.", 404);
+
+            return Result<OrderDto>.Ok(order);
         }
     }
 }

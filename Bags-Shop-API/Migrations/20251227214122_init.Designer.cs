@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bags_Shop_API.Migrations
 {
     [DbContext(typeof(Context))]
-    [Migration("20251218152310_add webhook")]
-    partial class addwebhook
+    [Migration("20251227214122_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -124,7 +124,8 @@ namespace Bags_Shop_API.Migrations
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -133,7 +134,11 @@ namespace Bags_Shop_API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("FinalPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
                         .IsRequired()
@@ -141,6 +146,9 @@ namespace Bags_Shop_API.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("Userkey")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -159,9 +167,11 @@ namespace Bags_Shop_API.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("TotalPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("OrderId", "ProductId");
@@ -180,6 +190,7 @@ namespace Bags_Shop_API.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -291,9 +302,6 @@ namespace Bags_Shop_API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("RawData")
-                        .HasColumnType("LONGTEXT");
-
                     b.Property<string>("ReceiptNumber")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -351,6 +359,9 @@ namespace Bags_Shop_API.Migrations
 
                     b.Property<int?>("CollectionId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("Delete_AT")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("DiscountId")
                         .HasColumnType("int");

@@ -13,10 +13,6 @@ namespace Bags_Shop_API.Specification
              
                 if (spec.Criteria != null)
                     query = query.Where(spec.Criteria);
-
-               
-
-
                 if (spec.OrderBy != null)
                     query = query.OrderBy(spec.OrderBy);
                 else if (spec.OrderByDescending != null)

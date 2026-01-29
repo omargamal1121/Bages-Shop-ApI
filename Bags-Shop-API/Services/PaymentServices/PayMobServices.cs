@@ -12,10 +12,10 @@ namespace Bags_Shop_API.Services.PaymentServices
     public interface IPayMobServices
     {
         Task<Result<PaymobPaymentStatusDto>> GetPaymentStatusAsync(long orderId);
-        Task<Result<PaymentLinkResult>> GetPaymentLinkAsync(CreatePaymentDto dto, int expires);
+        Task<Result<PaymentLinkResult>> GetPaymentLinkAsync(CreatePaymentDto dto, int expires, long? orderproviderId = null,int? paymentId=null);
     }
 
-    public class PayMobServices : IPaymentProcessor, IPayMobServices
+    public partial class PayMobServices : IPaymentProcessor, IPayMobServices
     {
         private readonly IBackgroundJobClient _backgroundJobClient;
         private readonly ILogger<PayMobServices> _logger;
@@ -144,7 +144,7 @@ namespace Bags_Shop_API.Services.PaymentServices
             }
         }
 
-        public async Task<Result<PaymentLinkResult>> GetPaymentLinkAsync(CreatePaymentDto dto, int expires)
+        public async Task<Result<PaymentLinkResult>> GetPaymentLinkAsync(CreatePaymentDto dto, int expires, long? orderproviderId = null, int? paymentid = null)
         {
             if (dto == null) return Result<PaymentLinkResult>.Fail("Invalid payment request", 400);
 
@@ -305,12 +305,5 @@ namespace Bags_Shop_API.Services.PaymentServices
             var iframeId = _configuration.GetValue<string>("Security:Paymob:IframeId") ?? "0";
             return $"https://accept.paymob.com/api/acceptance/iframes/{iframeId}?payment_token={paymentKey}";
         }
-
-        private class TokenResponse { public string token { get; set; } = string.Empty; }
-        private class CreateOrderRequest { public bool delivery_needed { get; set; } public decimal amount_cents { get; set; } public string currency { get; set; } = "EGP"; public string auth_token { get; set; } = string.Empty; public int? merchant_order_id { get; set; } }
-        private class CreateOrderResponse { public int id { get; set; } }
-        private class PaymentKeyContent { public string currency { get; set; } = "EGP"; public string auth_token { get; set; } = string.Empty; public decimal amount_cents { get; set; } public int expiration { get; set; } = 1000; public int order_id { get; set; } public string integration_id { get; set; } = string.Empty; public string redirection_url { get; set; } = string.Empty; public billing_data billing_data { get; set; } = new billing_data(); }
-        private class billing_data { public string first_name { get; set; } = "NA"; public string last_name { get; set; } = "NA"; public string email { get; set; } = "NA"; public string phone_number { get; set; } = "NA"; public string apartment { get; set; } = "NA"; public string floor { get; set; } = "NA"; public string street { get; set; } = "NA"; public string building { get; set; } = "NA"; public string shipping_method { get; set; } = "NA"; public string postal_code { get; set; } = "NA"; public string city { get; set; } = "NA"; public string country { get; set; } = "EG"; public string state { get; set; } = "NA"; }
-        private class PaymobWalletResponse { public string? redirect_url { get; set; } }
     }
 }

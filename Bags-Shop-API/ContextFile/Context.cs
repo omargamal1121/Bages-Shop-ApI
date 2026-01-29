@@ -37,6 +37,18 @@ namespace Bags_Shop_API.ContextFile
             modelBuilder.Entity<Product>()
         .Property(p => p.Price)
         .HasPrecision(18, 2);
+            modelBuilder.Entity<Order>()
+        .Property(p => p.FinalPrice)
+        .HasPrecision(18, 2);
+            modelBuilder.Entity<OrderItem>()
+        .Property(p => p.TotalPrice)
+        .HasPrecision(18, 2);
+            modelBuilder.Entity<OrderItem>()
+        .Property(p => p.UnitPrice)
+        .HasPrecision(18, 2);
+            modelBuilder.Entity<Payment>()
+        .Property(p => p.Amount)
+        .HasPrecision(18, 2);
 
 
         }

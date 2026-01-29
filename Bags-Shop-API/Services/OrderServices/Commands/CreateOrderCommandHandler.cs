@@ -14,9 +14,11 @@ namespace Bags_Shop_API.Services.OrderServices.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IBackgroundJobClient _backgroundJobClient;
-        public CreateOrderCommandHandler(IUnitOfWork unitOfWork, IBackgroundJobClient backgroundJobClient)
+        private readonly IOrderBackgroundJobs _orderBackgroundJobs;
+        public CreateOrderCommandHandler(IOrderBackgroundJobs orderBackgroundJobs, IUnitOfWork unitOfWork, IBackgroundJobClient backgroundJobClient)
         {
             _backgroundJobClient = backgroundJobClient;
+            _orderBackgroundJobs = orderBackgroundJobs;
             _unitOfWork = unitOfWork;
         }
 
@@ -60,9 +62,13 @@ namespace Bags_Shop_API.Services.OrderServices.Commands
                 Address = request.Address,
                 Phone = request.Phone,
                 Status = OrderStatus.Pending,
-                OrderItems = new List<OrderItem>()
-                ,
-                
+                OrderItems = new List<OrderItem>(),
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddHours(24),
+                Userkey = request.Userkey,
+                Name = request.Name
+
+
             };
 
             var itemsDict = request.Items.ToDictionary(x => x.ProductId);
@@ -90,33 +96,19 @@ namespace Bags_Shop_API.Services.OrderServices.Commands
 
             await _unitOfWork.Orders.AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
-            _backgroundJobClient.Schedule(() => CheckOnOrder(order.Id), DateTime.UtcNow.AddHours(2));
+            _backgroundJobClient.Schedule<IOrderBackgroundJobs>(
+             x => x.CheckOnOrderAsync(order.Id),
+              order.ExpiresAt
+                );
+
 
             return Result<int>.Ok(order.Id,statusCode: 201);
         }
-        public async Task CheckOnOrder(int orderid)
-        {
-            try
-            {
-                var order = await _unitOfWork.Orders.GetByIdAsync(orderid);
-                if (order == null) return;
-                if (order.Status == OrderStatus.Pending && order.ExpiresAt < DateTime.UtcNow)
-                {
-                    order.Status = OrderStatus.Expired;
-
-                }
-                await _unitOfWork.SaveChangesAsync();
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-
-        }
+        
 
     }
-  
+
+
+
 
 }

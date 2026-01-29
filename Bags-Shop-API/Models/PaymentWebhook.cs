@@ -54,8 +54,6 @@ namespace Bags_Shop_API.Models
         [StringLength(100)]
         public string? ProviderOrderId { get; set; } // PayMob order ID
 
-        [Column(TypeName = "LONGTEXT")]
-        public string? RawData { get; set; } // Full webhook payload for debugging
 
         [Required]
         public bool HmacVerified { get; set; } = false;

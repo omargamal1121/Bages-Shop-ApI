@@ -35,4 +35,30 @@ namespace Bags_Shop_API.Services.PaymentServices
         {
         }
     }
+
+    public class AllWebhooksSpec : BaseSpecification<PaymentWebhook>
+    {
+        public AllWebhooksSpec() : base()
+        {
+            ApplyOrderByDescending(w => w.Id);
+        }
+    }
+
+    public class WebhookWithDetailsSpec : BaseSpecification<PaymentWebhook>
+    {
+        public WebhookWithDetailsSpec(int id) : base(w => w.Id == id)
+        {
+        }
+    }
+
+    public static class PaymentSpecifications
+    {
+        public class PaymentByOrderSpec : BaseSpecification<Payment>
+        {
+            public PaymentByOrderSpec(int orderId)
+                : base(p => p.OrderId == orderId)
+            {
+            }
+        }
+    }
 }

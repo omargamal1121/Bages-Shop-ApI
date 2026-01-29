@@ -82,14 +82,14 @@ namespace Bags_Shop_API.Middleware
                     errorResponse.StatusCode = (int)HttpStatusCode.InternalServerError;
                     errorResponse.Message = "An internal server error occurred.";
   
-                    if (_environment.IsDevelopment())
-                    {
+                  
                         errorResponse.Errors = new List<string> 
                         { 
                             exception.Message,
                             exception.StackTrace ?? "No stack trace available"
                         };
-                    }
+               
+
                     break;
             }
 

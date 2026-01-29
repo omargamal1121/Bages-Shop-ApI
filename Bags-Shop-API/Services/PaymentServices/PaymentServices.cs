@@ -12,7 +12,7 @@ namespace Bags_Shop_API.Services.PaymentServices
     public interface IPaymentServices
     {
         Task<Result<PaymentResponseDto>> CreatePaymentMethod(int orderid, CreatePaymentOfCustomer paymentdto, string userid);
-        Task<Result<int>> UpdatePaymentAfterPaid(int orderid, string transactionId, long providerOrderId, PaymentStatus status);
+        Task<Result<int>> UpdatePaymentAfterPaid(int orderid, string transactionId, long providerOrderId, PaymentStatus status, string? paymentMethod = null);
     }
 
     public class PaymentServices : IPaymentServices
@@ -40,7 +40,7 @@ namespace Bags_Shop_API.Services.PaymentServices
             _logger = logger;
         }
 
-        public async Task<Result<int>> UpdatePaymentAfterPaid(int orderId, string transactionId, long providerOrderId, PaymentStatus status)
+        public async Task<Result<int>> UpdatePaymentAfterPaid(int orderId, string transactionId, long providerOrderId, PaymentStatus status, string? paymentMethod = null)
         {
             _logger.LogInformation("Starting UpdatePaymentAfterPaid for order {OrderId} with status {Status}", orderId, status);
 
@@ -65,14 +65,39 @@ namespace Bags_Shop_API.Services.PaymentServices
                     return Result<int>.Fail("Payment not found", 404,null);
                 }
 
-                if (latestPayment.Status == status)
+                bool isUpdated = false;
+
+                if (latestPayment.Status != status)
+                {
+                    latestPayment.Status = status;
+                    isUpdated = true;
+                }
+
+                // Update Payment Method if provided
+                if (!string.IsNullOrEmpty(paymentMethod))
+                {
+                    PaymentMethod? newMethod = paymentMethod.ToLower() switch
+                    {
+                        "card" => PaymentMethod.CardPayment,
+                        "wallet" => PaymentMethod.Wallet,
+                        "cash" => PaymentMethod.CashOnDelivery,
+                        _ => null
+                    };
+
+                    if (newMethod.HasValue && latestPayment.Method != newMethod.Value)
+                    {
+                        latestPayment.Method = newMethod.Value;
+                        isUpdated = true;
+                    }
+                }
+
+                if (!isUpdated)
                 {
                     _logger.LogInformation("Payment {PaymentId} already has status {Status}, no update needed", latestPayment.Id, status);
                     await _unitOfWork.RollbackTransactionAsync();
                     return Result<int>.Ok(latestPayment.Id);
                 }
 
-                latestPayment.Status = status;
                 latestPayment.TransactionId = transactionId;
                 latestPayment.ModifiedAt = DateTime.UtcNow;
 
@@ -122,12 +147,32 @@ namespace Bags_Shop_API.Services.PaymentServices
                 }
 
                 var pendingSpec = new PendingPaymentSpec(order.Id);
-                var ishaspendingpayment = await _unitOfWork.Payments.AnyAsync(pendingSpec);
+                var lastpayment = (await _unitOfWork.Payments.GetAllAsync(pendingSpec)).OrderBy(p=>p.Id).LastOrDefault();
 
-                if (ishaspendingpayment)
+                if (lastpayment is not null) 
                 {
-                    await _unitOfWork.RollbackTransactionAsync();
-                    return Result<PaymentResponseDto>.Fail("There is already a pending payment for this order. Please wait until it is completed ");
+                    if (lastpayment.Status == PaymentStatus.Completed)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return Result<PaymentResponseDto>.Fail("This order has already been paid.");
+                    }
+
+                    if (lastpayment.Status == PaymentStatus.Pending && 
+                        !string.IsNullOrEmpty(lastpayment.PaymentLink) &&
+                        lastpayment.PaymentLinkExpiresAt.HasValue &&
+                        lastpayment.PaymentLinkExpiresAt > DateTime.UtcNow)
+                    {
+                         _logger.LogInformation("Returning existing valid payment link for order {OrderId}", ordernumber);
+                         await _unitOfWork.RollbackTransactionAsync();
+                         
+                         return Result<PaymentResponseDto>.Ok(new PaymentResponseDto
+                         {
+                            IsRedirectRequired = true,
+                            RedirectUrl = lastpayment.PaymentLink,
+                            Message = "Redirect to the existing link to complete payment.",
+                            Paymentid = lastpayment.Id
+                         });
+                    }
                 }
 
                 if (order.Status != OrderStatus.Pending)
@@ -156,7 +201,7 @@ namespace Bags_Shop_API.Services.PaymentServices
 
                 if (paymentdto.PaymentMethod != PaymentMethod.CashOnDelivery)
                 {
-                    var onlinePaymentResult = await ProcessOnlinePayment(paymentdto, order, payment);
+                    var onlinePaymentResult = await ProcessOnlinePayment(paymentdto, order, payment, lastpayment?.ProviderOrderId);
                     if (!onlinePaymentResult.Success)
                     {
                         await _unitOfWork.RollbackTransactionAsync();
@@ -199,7 +244,7 @@ namespace Bags_Shop_API.Services.PaymentServices
             }
         }
 
-        private async Task<Result<PaymentResponseDto>> ProcessOnlinePayment(CreatePaymentOfCustomer paymentdto, Order order, Payment payment)
+        private async Task<Result<PaymentResponseDto>> ProcessOnlinePayment(CreatePaymentOfCustomer paymentdto, Order order, Payment payment,long? orderprovideid=null)
         {
             int timeremaining = (int)(order.ExpiresAt - DateTime.UtcNow).TotalSeconds;
             if (timeremaining <= 0)
@@ -207,6 +252,9 @@ namespace Bags_Shop_API.Services.PaymentServices
                 _logger.LogWarning("Order {OrderId} has expired and cannot be paid", order.Id);
                 return Result<PaymentResponseDto>.Fail("This order has expired and cannot be paid.", 400);
             }
+            
+            // Force 24h expiration for new links to match Paymob intention logic
+            int expiresInSeconds = 86400; 
 
             CreatePaymentDto createPayment = new CreatePaymentDto
             {
@@ -218,7 +266,7 @@ namespace Bags_Shop_API.Services.PaymentServices
                 WalletPhoneNumber = paymentdto.WalletPhoneNumber,
             };
 
-            var onlinePaymentResult = await _paymentProcessor.GetPaymentLinkAsync(createPayment, timeremaining);
+            var onlinePaymentResult = await _paymentProcessor.GetPaymentLinkAsync(createPayment, expiresInSeconds, orderprovideid, payment.Id);
 
             if (!onlinePaymentResult.Success || onlinePaymentResult.Data == null)
             {
@@ -227,6 +275,9 @@ namespace Bags_Shop_API.Services.PaymentServices
             }
 
             payment.ProviderOrderId = onlinePaymentResult.Data!.PaymobOrderId;
+            payment.PaymentLink = onlinePaymentResult.Data.PaymentUrl;
+            payment.PaymentIntentionId = onlinePaymentResult.Data.IntentionId;
+            payment.PaymentLinkExpiresAt = DateTime.UtcNow.AddSeconds(expiresInSeconds);
 
             return Result<PaymentResponseDto>.Ok(new PaymentResponseDto
             {
@@ -303,7 +354,6 @@ namespace Bags_Shop_API.Services.PaymentServices
                 _logger.LogError(ex, "Error in CheckAndUpdatePaymentStatusAsync for payment {PaymentId}", paymentId);
                 await _unitOfWork.RollbackTransactionAsync();
 
-                // Schedule retry for failed background job
                 _backgroundJobClient.Schedule(() =>
                     CheckAndUpdatePaymentStatusAsync(paymentId),
                     TimeSpan.FromMinutes(30));

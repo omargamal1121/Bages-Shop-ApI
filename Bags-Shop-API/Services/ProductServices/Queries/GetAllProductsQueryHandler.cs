@@ -83,7 +83,7 @@ namespace Bags_Shop_API.Services.ProductServices.Queries
             }
 
    
-            spec.Criteria = criteria;
+            spec.Criteria = criteria.And(p=>p.Delete_AT == null);
 
         
             spec.ApplyOrderBy(p => p.Id); 

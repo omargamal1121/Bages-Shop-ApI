@@ -1,4 +1,3 @@
-using Bags_Shop_API.Models;
 using DomainLayer.Models;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using System.Net;
@@ -7,7 +6,7 @@ using System.Net.Mail;
 namespace Bags_Shop_API.Services.Shared
 {
     public class EmailSender : IEmailSender
-    {
+	{
         private readonly IConfiguration _configuration;
 
         public EmailSender(IConfiguration configuration)

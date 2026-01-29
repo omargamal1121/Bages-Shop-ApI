@@ -5,7 +5,7 @@ namespace Bags_Shop_API.Services.PaymentServices
 {
     public interface IPaymentProcessor
     {
-        Task<Result<PaymentLinkResult>> GetPaymentLinkAsync(CreatePaymentDto dto, int expires);
+        Task<Result<PaymentLinkResult>> GetPaymentLinkAsync(CreatePaymentDto dto, int expires, long ?orderproviderId=null,int? paymentid=null);
         Task<Result<PaymobPaymentStatusDto>> GetPaymentStatusAsync(long orderId);
     }
 
@@ -25,7 +25,13 @@ namespace Bags_Shop_API.Services.PaymentServices
     {
         public string PaymentUrl { get; set; } = string.Empty;
         public long PaymobOrderId { get; set; }
-    }
+
+		public string ClientSecret { get; set; } = string.Empty;
+		public string PublicKey { get; set; } = string.Empty;
+		public string UnifiedCheckoutUrl { get; set; } = string.Empty;
+		public string IntentionId { get; set; } = string.Empty;
+    
+	}
 
     public class PaymobPaymentStatusDto
     {

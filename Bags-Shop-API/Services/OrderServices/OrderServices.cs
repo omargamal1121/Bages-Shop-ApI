@@ -7,7 +7,7 @@ namespace Bags_Shop_API.Services.OrderServices
     public interface IOrderServices
     {
         Task<Result<bool>> UpdateOrderAfterPaid(int orderId, OrderStatus status);
-        Task ConfirmOrderAsync(int orderId, string userId, bool isPaid, bool isCash, string? transactionId); // Stub for compatibility
+        Task ConfirmOrderAsync(int orderId, string userId, bool isPaid, bool isCash, string? transactionId); 
     }
 
     public class OrderServices : IOrderServices
@@ -30,7 +30,7 @@ namespace Bags_Shop_API.Services.OrderServices
                     return Result<bool>.Fail("Order not found");
 
                 order.Status = status;
-                // If Paid, maybe update stock? Leaving simple for now.
+          
                 
                 await _unitOfWork.SaveChangesAsync();
                 return Result<bool>.Ok(true);
@@ -63,7 +63,7 @@ namespace Bags_Shop_API.Services.OrderServices
 
                 order.Status = isCash ? OrderStatus.Processing : (isPaid ? OrderStatus.Paid : OrderStatus.Pending);
                 
-                // If it's a confirmed order (COD or Paid), we proceed
+    
                 if (order.Status != OrderStatus.Pending)
                 {
                     _logger.LogInformation("Order {OrderId} processed. Status updated to {Status}", orderId, order.Status);
@@ -71,8 +71,7 @@ namespace Bags_Shop_API.Services.OrderServices
 
                 await _unitOfWork.SaveChangesAsync();
 
-                // Here you would typically send an email
-                // _backgroundJobClient.Enqueue(() => _accountEmailService.SendOrderConfirmationEmail(order.UserEmail, order.Id));
+              
             }
             catch (Exception ex)
             {

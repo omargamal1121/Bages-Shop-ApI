@@ -1,5 +1,8 @@
+using ApplicationLayer.Services.PaymentWebhookService;
 using Bags_Shop_API.Services.PaymentServices;
 using Bags_Shop_API.Services.PaymentServices.Dtos;
+using Bags_Shop_API.Services.PaymentServices.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bags_Shop_API.Controllers
@@ -10,46 +13,59 @@ namespace Bags_Shop_API.Controllers
     {
         private readonly IPaymentWebhookService _webhookService;
         private readonly ILogger<WebhooksController> _logger;
+        private readonly IMediator _mediator;
 
-        public WebhooksController(IPaymentWebhookService webhookService, ILogger<WebhooksController> logger)
+        public WebhooksController(
+            IPaymentWebhookService webhookService, 
+            ILogger<WebhooksController> logger,
+            IMediator mediator)
         {
             _webhookService = webhookService;
             _logger = logger;
+            _mediator = mediator;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] GetAllWebhooksQuery query)
+        {
+            var result = await _mediator.Send(query);
+            if (!result.Success)
+                return StatusCode(result.StatusCode, result);
+
+            return Ok(result);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var result = await _mediator.Send(new GetWebhookByIdQuery(id));
+            if (!result.Success)
+                return StatusCode(result.StatusCode, result);
+
+            return Ok(result);
         }
 
         [HttpPost("paymob")]
-        public async Task<IActionResult> PaymobWebhook([FromBody] PaymobWebhookDto dto)
+        public async Task<IActionResult> PaymobWebhook([FromQuery] string? hmac, [FromBody] PaymobWebhookDto dto)
         {
-            // Paymob sends HMAC as a query parameter 'hmac'
-            string? receivedHmac = Request.Query["hmac"];
             
-            if (string.IsNullOrEmpty(receivedHmac))
+            
+            if (string.IsNullOrEmpty(hmac))
             {
-                // Some Paymob versions might send it in a specific header or as part of the body
-                // But usually it's a query param for the callback and webhook.
+               
                 _logger.LogWarning("HMAC missing from Paymob webhook request query.");
             }
 
-            var success = await _webhookService.HandlePaymobAsync(dto, receivedHmac ?? string.Empty);
+            var success = await _webhookService.HandlePaymobAsync(dto, hmac ?? string.Empty);
             
             if (!success)
             {
-                // Paymob expects a 200 even if validation fails usually to stop retries if it's a "bad" webhook
-                // but 400 is safer for debugging if we want them to retry on transient errors.
-                // However, for success handling we MUST return 200.
+                
                 return BadRequest();
             }
 
             return Ok();
         }
 
-        // Optional: Paymob callback (GET)
-        [HttpGet("paymob")]
-        public async Task<IActionResult> PaymobCallback([FromQuery] PaymobWebhookDto dto)
-        {
-            _logger.LogInformation("Paymob GET callback received: {@Dto}", dto);
-             // Usually GET callbacks are for UI redirection, but we can log them.
-            return Ok("Callback received");
-        }
     }
 }

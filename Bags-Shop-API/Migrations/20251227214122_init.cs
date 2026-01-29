@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Bags_Shop_API.Migrations
 {
     /// <inheritdoc />
-    public partial class inital : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -50,9 +50,14 @@ namespace Bags_Shop_API.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false)
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    FinalPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Userkey = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -72,7 +77,8 @@ namespace Bags_Shop_API.Migrations
                     Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     CollectionId = table.Column<int>(type: "int", nullable: true),
                     DiscountId = table.Column<int>(type: "int", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    Delete_AT = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -99,7 +105,13 @@ namespace Bags_Shop_API.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     OrderId = table.Column<int>(type: "int", nullable: false),
                     Method = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false)
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProviderOrderId = table.Column<long>(type: "bigint", nullable: false),
+                    TransactionId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -146,7 +158,9 @@ namespace Bags_Shop_API.Migrations
                 {
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     OrderId = table.Column<int>(type: "int", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false)
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TotalPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -166,7 +180,7 @@ namespace Bags_Shop_API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PaymentWebhooks",
+                name: "PaymentWebhook",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -185,7 +199,6 @@ namespace Bags_Shop_API.Migrations
                     CardLast4 = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     PaymentProvider = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     ProviderOrderId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    RawData = table.Column<string>(type: "nvarchar(255)", nullable: true),
                     HmacVerified = table.Column<bool>(type: "bit", nullable: false),
                     ErrorMessage = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     AuthorizationCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
@@ -202,15 +215,15 @@ namespace Bags_Shop_API.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PaymentWebhooks", x => x.Id);
+                    table.PrimaryKey("PK_PaymentWebhook", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PaymentWebhooks_Orders_OrderId",
+                        name: "FK_PaymentWebhook_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_PaymentWebhooks_Payments_PaymentId",
+                        name: "FK_PaymentWebhook_Payments_PaymentId",
                         column: x => x.PaymentId,
                         principalTable: "Payments",
                         principalColumn: "Id");
@@ -237,13 +250,13 @@ namespace Bags_Shop_API.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaymentWebhooks_OrderId",
-                table: "PaymentWebhooks",
+                name: "IX_PaymentWebhook_OrderId",
+                table: "PaymentWebhook",
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaymentWebhooks_PaymentId",
-                table: "PaymentWebhooks",
+                name: "IX_PaymentWebhook_PaymentId",
+                table: "PaymentWebhook",
                 column: "PaymentId");
 
             migrationBuilder.CreateIndex(
@@ -267,7 +280,7 @@ namespace Bags_Shop_API.Migrations
                 name: "OrderItems");
 
             migrationBuilder.DropTable(
-                name: "PaymentWebhooks");
+                name: "PaymentWebhook");
 
             migrationBuilder.DropTable(
                 name: "Products");

@@ -31,6 +31,8 @@ namespace Bags_Shop_API
 		public Discount? Discount { get; set; }
         public bool IsActive { get; set; } = false;
 
+		public  DateTime? Delete_AT { get; set; }
 
-    }
+
+	}
 }

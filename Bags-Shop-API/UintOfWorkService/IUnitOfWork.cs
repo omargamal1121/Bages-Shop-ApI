@@ -5,7 +5,7 @@ namespace Bags_Shop_API.UnitOfWorkService
 {
 	public interface IUnitOfWork : IDisposable
     {
-        // Repositories
+
         public IMainRepository<Product> Products { get; }
         public IMainRepository<Image> Images { get; }
         public IMainRepository<Order> Orders { get; }

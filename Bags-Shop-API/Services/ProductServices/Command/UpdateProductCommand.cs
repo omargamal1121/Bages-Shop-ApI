@@ -1,6 +1,5 @@
 ﻿using Bags_Shop_API.Services.ProductServices.ProductsDtos;
 using Bags_Shop_API.Services.Shared;
-using Bags_Shop_API.Specification;
 using Bags_Shop_API.Services.Behaviors;
 
 using MediatR;
@@ -15,7 +14,9 @@ namespace Bags_Shop_API.Services.ProductServices.Command
         public string? EnName { get; set; }
         public string? ArDescription { get; set; }
         public string? EnDescription { get; set; }
-      
+
+        public decimal? Price { get; set; }
+
     }
   
 

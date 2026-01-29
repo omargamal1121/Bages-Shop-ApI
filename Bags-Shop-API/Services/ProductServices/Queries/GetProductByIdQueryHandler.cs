@@ -47,7 +47,7 @@ namespace Bags_Shop_API.Services.ProductServices.Queries
                 }).ToList()
             });
 
-            spec.Criteria = p => p.Id == request.Id;
+            spec.Criteria = p => p.Id == request.Id&&p.Delete_AT==null;
 
             var products = await _unitOfWork.Products.GetAllAsync(spec);
             var productDto = products.FirstOrDefault();

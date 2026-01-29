@@ -20,7 +20,7 @@ namespace Bags_Shop_API.Services.ProductServices.Command
         {
             var product = await _unitOfWork.Products.GetByIdAsync(request.Id);
 
-            if (product == null)
+            if (product == null||product.Delete_AT!=null)
                 return Result<bool>.Fail($"No Product With Id {request.Id}", 404);
             if(product.Price<=0)
                 return Result<bool>.Fail($"Must price More than 0", 400);
