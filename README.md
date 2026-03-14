@@ -1,13 +1,18 @@
-## Bags-Shop-API
+# Bags-Shop-API
 
 ASP.NET Core **.NET 10** Web API for managing bags, collections, discounts, orders, and payments with CQRS, background jobs, and integrated image and payment services.
+
+> **Freelance Project** — Built for a real client and actively serving production traffic.
+>
+> - 🛍️ **Client Store**: [https://ziko-store.vercel.app/](https://ziko-store.vercel.app/)
+> - 📸 **Client Instagram**: [https://www.instagram.com/zyko_alkomdyan](https://www.instagram.com/zyko_alkomdyan)
 
 - **Live Swagger API**: [http://bags-shop.runasp.net/swagger](http://bags-shop.runasp.net/swagger)
 - **Live Store Frontend**: [https://ziko-store.vercel.app/](https://ziko-store.vercel.app/)
 
 ---
 
-### 1. Overview & Features
+## 1. Overview & Features
 
 - **Modern .NET 10 stack**
   - ASP.NET Core Web API targeting `net10.0`
@@ -36,26 +41,26 @@ ASP.NET Core **.NET 10** Web API for managing bags, collections, discounts, orde
 
 ---
 
-### 2. AI Assistance Disclaimer
+## 2. AI Assistance Disclaimer
 
-- **Primary author**: All architecture, domain modeling, and final design decisions for `Bags-Shop-API` were made by the developer.
+- **Primary author**: All architecture, domain modeling, and final design decisions for Bags-Shop-API were made by me.
 - **Role of AI**:
   - AI was used **only as a coding assistant** to speed up tasks such as drafting boilerplate, suggesting validation rules (especially for **image validation**), refining error handling, and improving documentation.
   - All AI-generated suggestions were **reviewed, adapted, or rewritten** by the developer before being included.
-- **Ownership**: The developer retains full responsibility for the project’s logic, design, and behavior.
+- **Ownership**: I retain full responsibility for the project’s logic, design, and behavior.
 
 ---
 
-### 3. Getting Started
+## 3. Getting Started
 
-#### Prerequisites
+### Prerequisites
 
 - **.NET SDK**: `.NET 10` SDK (matching `net10.0` in the project file)
 - **Database**: SQL Server instance
 - **Tools (optional)**:
   - `dotnet-ef` CLI for running migrations
 
-#### Installation & Setup
+### Installation & Setup
 
 From the project root (where the `.sln` and `.csproj` reside):
 
@@ -79,7 +84,7 @@ By default, Swagger UI and OpenAPI should be available at the configured URL (e.
 
 ---
 
-### 4. High-Level Project Structure
+## 4. High-Level Project Structure
 
 ```text
 Bags-Shop-API/
@@ -118,7 +123,7 @@ Bags-Shop-API/
 
 ---
 
-### 5. Configuration & Environments
+## 5. Configuration & Environments
 
 - **Configuration files**
   - `appsettings.json`: Base configuration (logging, connection strings, external services).
@@ -140,7 +145,7 @@ Bags-Shop-API/
 
 ---
 
-### 6. Skills Showcased
+## 6. Skills Showcased
 
 - **Backend & .NET**
   - ASP.NET Core Web API targeting `.NET 10`
@@ -165,5 +170,4 @@ Bags-Shop-API/
   - Validation layers (including AI-assisted image validation rules)
   - CORS and API key authentication
 
-This project is intended as a solid, production-oriented Web API showcasing modern .NET patterns, integrations, and API design.
-
+This is a live, production Web API built for a real client, showcasing modern .NET patterns, integrations, and API design.
